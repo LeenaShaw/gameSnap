@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GameSnap - Quick Gaming Portal</title>
+    <link rel="stylesheet" href="styles/global.css">
+</head>
+<body>
+    <div class="container">
+        <header class="portal-header">
+            <div class="mascot-container">
+                <div class="mascot">🎯</div>
+            </div>
+            <h1>GameSnap</h1>
+            <p>Snap into fun with our collection of mini games!</p>
+            <p class="subtitle">A wonderful world collection of mini games designed for quick mental refreshment.</p>
+        </header>
+
+        <main class="game-grid">
+            <div class="game-card" onclick="location.href='games/memory.html'">
+                <span class="game-icon">🧠</span>
+                <h3>Memory Match</h3>
+                <p>Test your memory with this classic card matching game. Flip cards to find pairs and challenge your recall skills.</p>
+            </div>
+
+            <div class="game-card" onclick="location.href='games/2048.html'">
+                <span class="game-icon">🔢</span>
+                <h3>2048 Mini</h3>
+                <p>Slide numbered tiles to combine them and reach the 2048 tile. A simplified version of the popular puzzle game.</p>
+            </div>
+
+            <div class="game-card" onclick="location.href='games/wordscramble.html'">
+                <span class="game-icon">📝</span>
+                <h3>Word Scramble</h3>
+                <p>Unscramble the letters to form words. Test your vocabulary and word recognition skills in this quick brain teaser.</p>
+            </div>
+
+            <div class="game-card" onclick="location.href='games/chainreaction.html'">
+                <span class="game-icon">⚡</span>
+                <h3>Chain Reaction</h3>
+                <p>Strategic game of exploding dots! Place dots and create chain reactions to capture the entire grid.</p>
+            </div>
+
+            <div class="game-card" onclick="location.href='games/snake.html'">
+                <span class="game-icon">🐍</span>
+                <h3>Snake Classic</h3>
+                <p>Guide your snake to eat food and grow longer. Avoid walls and your own tail in this timeless arcade classic!</p>
+            </div>
+
+            <div class="game-card" onclick="location.href='games/simon.html'">
+                <span class="game-icon">🎵</span>
+                <h3>Simon Says</h3>
+                <p>Test your memory with color sequences. Watch the pattern and repeat it back to advance through levels.</p>
+            </div>
+        </main>
+
+        <footer style="text-align: center; margin-top: 20px; padding: 15px 0; color: #f5f4f4; font-size: 0.55rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            <p style="margin: 0;">Built for quick mental refreshment • No signup required • Play instantly</p>
+        </footer>
+    </div>
+
+    <script>
+        // Add subtle interactive effects
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-10px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) scale(1)';
+            });
+            
+            // Add keyboard navigation support
+            card.setAttribute('tabindex', '0');
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    card.click();
+                }
+            });
+        });
+
+        // Add loading animation for game transitions
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.style.opacity = '0.7';
+                card.style.transform = 'scale(0.95)';
+                
+                // Show loading feedback
+                const originalText = card.innerHTML;
+                setTimeout(() => {
+                    card.innerHTML = '<span class="game-icon">⚡</span><h3>Loading...</h3><p>Starting game</p>';
+                }, 100);
+            });
+        });
+
+        // Add fade-in animation on page load
+        window.addEventListener('load', () => {
+            document.body.classList.add('fade-in');
+        });
+
+        // Add service worker registration for offline capability (optional)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Uncomment below to enable service worker
+                // navigator.serviceWorker.register('/sw.js')
+                //     .then(reg => console.log('SW registered'))
+                //     .catch(err => console.log('SW registration failed'));
+            });
+        }
+
+        // Add local storage for user preferences
+        const preferences = {
+            load() {
+                return JSON.parse(localStorage.getItem('gameSnap-preferences') || '{}');
+            },
+            
+            save(prefs) {
+                localStorage.setItem('gameSnap-preferences', JSON.stringify(prefs));
+            }
+        };
+
+        // Initialize page with user preferences
+        const userPrefs = preferences.load();
+        if (userPrefs.theme === 'classic') {
+            document.body.style.filter = 'sepia(0.3) contrast(1.2)';
+        }
+    </script>
+</body>
+</html>

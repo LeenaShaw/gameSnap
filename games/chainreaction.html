@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chain Reaction - GameSnap</title>
+    <link rel="stylesheet" href="../styles/global.css">
+    <style>
+        .chain-game {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            border: 3px solid #6c5ce7;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.2);
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: rgba(108, 92, 231, 0.05);
+            border: 2px solid rgba(108, 92, 231, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            font-size: 0.8rem;
+            color: #333;
+            user-select: none;
+        }
+
+        .cell:hover {
+            background: rgba(108, 92, 231, 0.1);
+            border-color: #6c5ce7;
+            transform: scale(1.05);
+        }
+
+        .cell.player1 {
+            background: linear-gradient(145deg, #ff6b6b, #ff5252);
+            border-color: #ff6b6b;
+        }
+
+        .cell.player2 {
+            background: linear-gradient(145deg, #4ecdc4, #26d0ce);
+            border-color: #4ecdc4;
+        }
+
+        .cell.critical {
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(255, 107, 107, 0.7);
+            }
+            50% { 
+                transform: scale(1.1);
+                box-shadow: 0 0 20px rgba(255, 107, 107, 0.7);
+            }
+        }
+
+        .cell.exploding {
+            animation: explode 0.8s ease-out;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(2); opacity: 0.8; }
+            100% { transform: scale(0.5); opacity: 0.3; }
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            position: absolute;
+            animation: dotAppear 0.3s ease-out;
+        }
+
+        @keyframes dotAppear {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        .dot:nth-child(1) { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .dot:nth-child(2) { top: 30%; left: 30%; }
+        .dot:nth-child(3) { top: 30%; right: 30%; }
+        .dot:nth-child(4) { bottom: 30%; left: 30%; }
+        .dot:nth-child(5) { bottom: 30%; right: 30%; }
+
+        .game-info-chain {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .player-info {
+            background: white;
+            border: 2px solid #6c5ce7;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            min-width: 120px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.1);
+        }
+
+        .player-info.active {
+            border-color: #e74c3c;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+            transform: scale(1.05);
+        }
+
+        .player-info.player1 {
+            border-color: #ff6b6b;
+        }
+
+        .player-info.player2 {
+            border-color: #4ecdc4;
+        }
+
+        .player-info.active.player1 {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .player-info.active.player2 {
+            border-color: #4ecdc4;
+            box-shadow: 0 0 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .player-name {
+            font-size: 0.8rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .player-score {
+            font-size: 1.1rem;
+            color: #6c5ce7;
+            font-weight: bold;
+        }
+
+        .game-status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(108, 92, 231, 0.1);
+            border: 2px solid #6c5ce7;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #f9f8fc;
+        }
+
+        .instructions-chain {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(108, 92, 231, 0.1);
+            border: 1px solid #6c5ce7;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            color: #f4f2f2;
+            line-height: 1.4;
+        }
+
+        .win-message-chain {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 3px solid #6c5ce7;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+            min-width: 300px;
+            box-shadow: 0 15px 35px rgba(108, 92, 231, 0.3);
+        }
+
+        .win-message-chain.show {
+            display: block;
+            animation: popIn 0.5s ease-out;
+        }
+
+        .win-message-chain h2 {
+            color: #6c5ce7;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .win-message-chain .winner-player1 h2 {
+            color: #ff6b6b;
+        }
+
+        .win-message-chain .winner-player2 h2 {
+            color: #4ecdc4;
+        }
+
+        .chain-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-selector {
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .difficulty-selector select {
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.8rem;
+            padding: 8px;
+            background: white;
+            border: 2px solid #6c5ce7;
+            border-radius: 6px;
+            color: #333;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-container">
+            <header class="game-header">
+                <h1>⚡ Chain Reaction</h1>
+                <a href="../index.html" class="btn btn-secondary">← Back to Portal</a>
+            </header>
+
+            <div class="game-info-chain">
+                <div class="player-info player1" id="player1Info">
+                    <div class="player-name">Player 1</div>
+                    <div class="player-score" id="player1Score">0</div>
+                </div>
+                
+                <div class="game-status" id="gameStatus">
+                    Player 1's Turn - Click any cell to place a dot!
+                </div>
+                
+                <div class="player-info player2" id="player2Info">
+                    <div class="player-name">Player 2</div>
+                    <div class="player-score" id="player2Score">0</div>
+                </div>
+            </div>
+
+            <div class="chain-game">
+                <div class="game-grid" id="gameGrid">
+                    <!-- Grid cells will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="instructions-chain">
+                <strong>How to Play:</strong><br>
+                • Click empty cells to place dots<br>
+                • When a cell reaches its limit (corners: 2, edges: 3, center: 4), it explodes<br>
+                • Explosions spread dots to adjacent cells, potentially causing chain reactions<br>
+                • Capture all cells to win!
+            </div>
+
+            <div class="difficulty-selector">
+                <label for="gridSize" style="color: #ccc; font-size: 0.7rem; margin-right: 10px;">Grid Size:</label>
+                <select id="gridSize" onchange="changeGridSize()">
+                    <option value="6">6x6 (Easy)</option>
+                    <option value="8">8x8 (Medium)</option>
+                    <option value="10">10x10 (Hard)</option>
+                </select>
+            </div>
+
+            <div class="chain-controls">
+                <button class="btn" onclick="startNewGame()">New Game</button>
+                <button class="btn btn-secondary" onclick="resetGame()">Reset</button>
+                <button class="btn btn-secondary" onclick="toggleAI()">vs AI</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="win-message-chain" id="winMessage">
+        <div id="winnerContent">
+            <h2>🎉 Player Wins!</h2>
+            <p>Congratulations on your chain reaction mastery!</p>
+            <div style="margin: 20px 0; font-size: 0.8rem; color: #ccc;" id="winStats"></div>
+        </div>
+        <div style="margin-top: 20px;">
+            <button class="btn" onclick="startNewGame()">Play Again</button>
+            <button class="btn btn-secondary" onclick="location.href='../index.html'">Back to Portal</button>
+        </div>
+    </div>
+
+    <script>
+        class ChainReactionGame {
+            constructor() {
+                this.gridSize = 6;
+                this.grid = [];
+                this.currentPlayer = 1;
+                this.gameActive = true;
+                this.aiMode = false;
+                this.playerScores = {1: 0, 2: 0};
+                this.moveCount = 0;
+                this.chainReactions = 0;
+                this.init();
+            }
+
+            init() {
+                this.createGrid();
+                this.updateDisplay();
+            }
+
+            createGrid() {
+                const gridElement = document.getElementById('gameGrid');
+                gridElement.style.gridTemplateColumns = `repeat(${this.gridSize}, 1fr)`;
+                gridElement.innerHTML = '';
+                
+                this.grid = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill(null));
+
+                for (let i = 0; i < this.gridSize; i++) {
+                    for (let j = 0; j < this.gridSize; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+                        cell.addEventListener('click', () => this.makeMove(i, j));
+                        gridElement.appendChild(cell);
+                        
+                        this.grid[i][j] = {
+                            dots: 0,
+                            player: null,
+                            element: cell
+                        };
+                    }
+                }
+            }
+
+            getMaxDots(row, col) {
+                const isCorner = (row === 0 || row === this.gridSize - 1) && 
+                                (col === 0 || col === this.gridSize - 1);
+                const isEdge = row === 0 || row === this.gridSize - 1 || 
+                              col === 0 || col === this.gridSize - 1;
+                
+                if (isCorner) return 2;
+                if (isEdge) return 3;
+                return 4;
+            }
+
+            makeMove(row, col) {
+                if (!this.gameActive) return;
+                
+                const cell = this.grid[row][col];
+                
+                // Can only place in empty cells or own cells
+                if (cell.player !== null && cell.player !== this.currentPlayer) return;
+
+                this.moveCount++;
+                cell.dots++;
+                cell.player = this.currentPlayer;
+                this.updateCellDisplay(row, col);
+
+                // Check for explosion
+                if (cell.dots >= this.getMaxDots(row, col)) {
+                    this.explodeCell(row, col);
+                }
+
+                if (this.checkWin()) {
+                    this.endGame();
+                } else {
+                    this.switchPlayer();
+                    
+                    // AI move if in AI mode
+                    if (this.aiMode && this.currentPlayer === 2) {
+                        setTimeout(() => this.makeAIMove(), 1000);
+                    }
+                }
+
+                this.updateDisplay();
+            }
+
+            async explodeCell(row, col) {
+                const cell = this.grid[row][col];
+                const player = cell.player;
+                
+                cell.element.classList.add('exploding');
+                this.chainReactions++;
+                
+                await this.delay(300);
+                
+                cell.dots = 0;
+                cell.player = null;
+                this.updateCellDisplay(row, col);
+                
+                // Spread to adjacent cells
+                const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                const explosions = [];
+                
+                for (const [dx, dy] of directions) {
+                    const newRow = row + dx;
+                    const newCol = col + dy;
+                    
+                    if (newRow >= 0 && newRow < this.gridSize && 
+                        newCol >= 0 && newCol < this.gridSize) {
+                        
+                        const targetCell = this.grid[newRow][newCol];
+                        targetCell.dots++;
+                        targetCell.player = player;
+                        this.updateCellDisplay(newRow, newCol);
+                        
+                        if (targetCell.dots >= this.getMaxDots(newRow, newCol)) {
+                            explosions.push([newRow, newCol]);
+                        }
+                    }
+                }
+                
+                cell.element.classList.remove('exploding');
+                
+                // Chain explosions
+                for (const [expRow, expCol] of explosions) {
+                    await this.delay(200);
+                    await this.explodeCell(expRow, expCol);
+                }
+            }
+
+            updateCellDisplay(row, col) {
+                const cell = this.grid[row][col];
+                const element = cell.element;
+                
+                element.innerHTML = '';
+                element.className = 'cell';
+                
+                if (cell.player) {
+                    element.classList.add(`player${cell.player}`);
+                    
+                    for (let i = 0; i < cell.dots; i++) {
+                        const dot = document.createElement('div');
+                        dot.className = 'dot';
+                        element.appendChild(dot);
+                    }
+                    
+                    if (cell.dots >= this.getMaxDots(row, col)) {
+                        element.classList.add('critical');
+                    }
+                }
+            }
+
+            makeAIMove() {
+                if (!this.gameActive || this.currentPlayer !== 2) return;
+
+                const possibleMoves = [];
+                
+                for (let i = 0; i < this.gridSize; i++) {
+                    for (let j = 0; j < this.gridSize; j++) {
+                        const cell = this.grid[i][j];
+                        if (cell.player === null || cell.player === 2) {
+                            possibleMoves.push([i, j]);
+                        }
+                    }
+                }
+
+                if (possibleMoves.length > 0) {
+                    const [row, col] = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                    this.makeMove(row, col);
+                }
+            }
+
+            switchPlayer() {
+                this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+                this.updateDisplay();
+            }
+
+            checkWin() {
+                if (this.moveCount < 2) return false;
+                
+                let player1Cells = 0;
+                let player2Cells = 0;
+                
+                for (let i = 0; i < this.gridSize; i++) {
+                    for (let j = 0; j < this.gridSize; j++) {
+                        const cell = this.grid[i][j];
+                        if (cell.player === 1) player1Cells++;
+                        if (cell.player === 2) player2Cells++;
+                    }
+                }
+                
+                this.playerScores[1] = player1Cells;
+                this.playerScores[2] = player2Cells;
+                
+                return (player1Cells > 0 && player2Cells === 0) || 
+                       (player2Cells > 0 && player1Cells === 0);
+            }
+
+            updateDisplay() {
+                const player1Info = document.getElementById('player1Info');
+                const player2Info = document.getElementById('player2Info');
+                const gameStatus = document.getElementById('gameStatus');
+                
+                player1Info.classList.toggle('active', this.currentPlayer === 1);
+                player2Info.classList.toggle('active', this.currentPlayer === 2);
+                
+                document.getElementById('player1Score').textContent = this.playerScores[1];
+                document.getElementById('player2Score').textContent = this.playerScores[2];
+                
+                if (this.gameActive) {
+                    const playerName = this.aiMode && this.currentPlayer === 2 ? 'AI' : `Player ${this.currentPlayer}`;
+                    gameStatus.textContent = `${playerName}'s Turn - Click to place a dot!`;
+                }
+            }
+
+            endGame() {
+                this.gameActive = false;
+                const winner = this.playerScores[1] > 0 ? 1 : 2;
+                const winnerName = this.aiMode && winner === 2 ? 'AI' : `Player ${winner}`;
+                
+                const winMessage = document.getElementById('winMessage');
+                const winnerContent = document.getElementById('winnerContent');
+                
+                winnerContent.className = `winner-player${winner}`;
+                winnerContent.querySelector('h2').textContent = `🎉 ${winnerName} Wins!`;
+                
+                document.getElementById('winStats').innerHTML = `
+                    <div>Total Moves: ${this.moveCount}</div>
+                    <div>Chain Reactions: ${this.chainReactions}</div>
+                    <div>Final Score: ${this.playerScores[winner]} cells</div>
+                `;
+                
+                winMessage.classList.add('show');
+                
+                document.getElementById('gameStatus').textContent = `Game Over - ${winnerName} Wins!`;
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            reset() {
+                this.grid = [];
+                this.currentPlayer = 1;
+                this.gameActive = true;
+                this.playerScores = {1: 0, 2: 0};
+                this.moveCount = 0;
+                this.chainReactions = 0;
+                document.getElementById('winMessage').classList.remove('show');
+                this.createGrid();
+                this.updateDisplay();
+            }
+
+            changeGridSize(size) {
+                this.gridSize = size;
+                this.reset();
+            }
+
+            toggleAI() {
+                this.aiMode = !this.aiMode;
+                const button = event.target;
+                button.textContent = this.aiMode ? 'vs Human' : 'vs AI';
+                
+                if (this.aiMode) {
+                    document.querySelector('#player2Info .player-name').textContent = 'AI';
+                } else {
+                    document.querySelector('#player2Info .player-name').textContent = 'Player 2';
+                }
+                
+                this.reset();
+            }
+        }
+
+        let game = new ChainReactionGame();
+
+        function startNewGame() {
+            game = new ChainReactionGame();
+        }
+
+        function resetGame() {
+            game.reset();
+        }
+
+        function toggleAI() {
+            game.toggleAI();
+        }
+
+        function changeGridSize() {
+            const size = parseInt(document.getElementById('gridSize').value);
+            game.changeGridSize(size);
+        }
+    </script>
+</body>
+</html>

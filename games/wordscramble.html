@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Scramble - GameSnap</title>
+    <link rel="stylesheet" href="../styles/global.css">
+    <style>
+        .word-game {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .scrambled-word {
+            font-size: 2.2rem;
+            color: #4338ca;
+            text-align: center;
+            margin: 30px 0;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 20px;
+            letter-spacing: 0.15em;
+            text-shadow: none;
+            animation: pulse 2s infinite;
+            font-weight: 700;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .word-input-container {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .word-input {
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            padding: 15px;
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid rgba(67, 56, 202, 0.3);
+            border-radius: 15px;
+            color: #1f2937;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .word-input:focus {
+            border-color: #4338ca;
+            box-shadow: 0 0 20px rgba(67, 56, 202, 0.3);
+        }
+
+        .hint-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .hint-text {
+            color: #4338ca;
+            font-size: 0.85rem;
+            margin: 8px 0;
+            font-weight: 500;
+        }
+
+        .category {
+            color: #7c3aed;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 15px;
+            padding: 18px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            color: #4338ca;
+            display: block;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .feedback {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .feedback.show {
+            transform: translateX(0);
+        }
+
+        .feedback.correct {
+            background: linear-gradient(145deg, #6c5ce7, #5a4bcf);
+            color: #fff;
+            border: 2px solid #6c5ce7;
+        }
+
+        .feedback.incorrect {
+            background: linear-gradient(145deg, #ff6b6b, #ff5252);
+            color: #fff;
+            border: 2px solid #ff6b6b;
+        }
+
+        .word-length {
+            color: #6b7280;
+            font-size: 0.85rem;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4338ca, #7c3aed);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .skip-btn {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .skip-btn:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Make the emoji icon smaller */
+        .game-header h1 {
+            font-size: 1.2rem;
+        }
+
+        .game-header h1::before {
+            content: '📝';
+            font-size: 0.8em;
+            margin-right: 0.3em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-container">
+            <header class="game-header">
+                <h1>Word Scramble</h1>
+                <a href="../index.html" class="btn btn-secondary">← Back to Portal</a>
+            </header>
+
+            <div class="game-stats">
+                <div class="stat-box">
+                    <span class="stat-value" id="score">0</span>
+                    <div class="stat-label">Score</div>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="streak">0</span>
+                    <div class="stat-label">Streak</div>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="wordsCompleted">0</span>
+                    <div class="stat-label">Words</div>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="timeLeft">60</span>
+                    <div class="stat-label">Time</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="word-game">
+                <div class="scrambled-word" id="scrambledWord">LOADING...</div>
+                
+                <div class="word-length" id="wordLength">
+                    Word length: <span id="lengthValue">0</span> letters
+                </div>
+
+                <div class="hint-section">
+                    <div class="category" id="category">Category</div>
+                    <div class="hint-text" id="hint">Hint will appear here</div>
+                </div>
+
+                <div class="word-input-container">
+                    <input type="text" class="word-input" id="wordInput" placeholder="Type your answer..." autocomplete="off">
+                    <button class="skip-btn" onclick="skipWord()">Skip</button>
+                </div>
+            </div>
+
+            <div class="game-controls" style="margin-top: 30px;">
+                <button class="btn" onclick="startNewGame()">New Game</button>
+                <button class="btn btn-secondary" onclick="toggleHint()">Toggle Hints</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <script>
+        class WordScrambleGame {
+            constructor() {
+                this.words = [
+                    {word: 'COMPUTER', hint: 'Electronic device for processing data', category: 'TECHNOLOGY'},
+                    {word: 'ELEPHANT', hint: 'Large mammal with tusks and trunk', category: 'ANIMALS'},
+                    {word: 'RAINBOW', hint: 'Colorful arc in the sky after rain', category: 'NATURE'},
+                    {word: 'GUITAR', hint: 'Stringed musical instrument', category: 'MUSIC'},
+                    {word: 'PIZZA', hint: 'Italian dish with cheese and toppings', category: 'FOOD'},
+                    {word: 'BICYCLE', hint: 'Two-wheeled vehicle powered by pedaling', category: 'TRANSPORT'},
+                    {word: 'CASTLE', hint: 'Medieval fortified building', category: 'ARCHITECTURE'},
+                    {word: 'DIAMOND', hint: 'Precious gemstone, hardest natural material', category: 'MINERALS'},
+                    {word: 'OCEAN', hint: 'Large body of salt water', category: 'GEOGRAPHY'},
+                    {word: 'ROCKET', hint: 'Vehicle designed for space travel', category: 'SPACE'},
+                    {word: 'BUTTERFLY', hint: 'Insect with colorful wings', category: 'ANIMALS'},
+                    {word: 'MOUNTAIN', hint: 'High elevation landform', category: 'GEOGRAPHY'},
+                    {word: 'TELEPHONE', hint: 'Device for long-distance communication', category: 'TECHNOLOGY'},
+                    {word: 'CHOCOLATE', hint: 'Sweet treat made from cocoa', category: 'FOOD'},
+                    {word: 'LIBRARY', hint: 'Place where books are kept', category: 'PLACES'},
+                    {word: 'BASKETBALL', hint: 'Sport played with hoops and bouncing ball', category: 'SPORTS'},
+                    {word: 'SANDWICH', hint: 'Food with filling between bread slices', category: 'FOOD'},
+                    {word: 'CALENDAR', hint: 'System for organizing days and dates', category: 'TOOLS'},
+                    {word: 'PAINTING', hint: 'Art created with pigments on canvas', category: 'ART'},
+                    {word: 'KEYBOARD', hint: 'Input device with letters and numbers', category: 'TECHNOLOGY'}
+                ];
+
+                this.currentWord = null;
+                this.scrambledWord = '';
+                this.score = 0;
+                this.streak = 0;
+                this.wordsCompleted = 0;
+                this.timeLeft = 60;
+                this.gameActive = false;
+                this.hintsEnabled = true;
+                this.timer = null;
+
+                this.wordInput = document.getElementById('wordInput');
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.startNewGame();
+            }
+
+            setupEventListeners() {
+                this.wordInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.checkAnswer();
+                    }
+                });
+
+                this.wordInput.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase();
+                });
+            }
+
+            startNewGame() {
+                this.score = 0;
+                this.streak = 0;
+                this.wordsCompleted = 0;
+                this.timeLeft = 60;
+                this.gameActive = true;
+                this.startTimer();
+                this.nextWord();
+                this.updateDisplay();
+            }
+
+            startTimer() {
+                if (this.timer) clearInterval(this.timer);
+                
+                this.timer = setInterval(() => {
+                    this.timeLeft--;
+                    this.updateDisplay();
+                    
+                    if (this.timeLeft <= 0) {
+                        this.endGame();
+                    }
+                }, 1000);
+            }
+
+            nextWord() {
+                if (!this.gameActive) return;
+
+                const randomIndex = Math.floor(Math.random() * this.words.length);
+                this.currentWord = this.words[randomIndex];
+                this.scrambledWord = this.scrambleWord(this.currentWord.word);
+                
+                // Make sure scrambled word is actually scrambled
+                while (this.scrambledWord === this.currentWord.word && this.currentWord.word.length > 3) {
+                    this.scrambledWord = this.scrambleWord(this.currentWord.word);
+                }
+
+                this.displayWord();
+                this.wordInput.value = '';
+                this.wordInput.focus();
+            }
+
+            scrambleWord(word) {
+                const letters = word.split('');
+                for (let i = letters.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [letters[i], letters[j]] = [letters[j], letters[i]];
+                }
+                return letters.join('');
+            }
+
+            displayWord() {
+                document.getElementById('scrambledWord').textContent = this.scrambledWord;
+                document.getElementById('lengthValue').textContent = this.currentWord.word.length;
+                
+                if (this.hintsEnabled) {
+                    document.getElementById('category').textContent = this.currentWord.category;
+                    document.getElementById('hint').textContent = this.currentWord.hint;
+                } else {
+                    document.getElementById('category').textContent = 'HINTS DISABLED';
+                    document.getElementById('hint').textContent = 'Figure it out yourself!';
+                }
+            }
+
+            checkAnswer() {
+                if (!this.gameActive) return;
+
+                const userAnswer = this.wordInput.value.trim().toUpperCase();
+                
+                if (userAnswer === this.currentWord.word) {
+                    this.correctAnswer();
+                } else if (userAnswer.length > 0) {
+                    this.incorrectAnswer();
+                }
+            }
+
+            correctAnswer() {
+                this.streak++;
+                this.wordsCompleted++;
+                
+                // Score calculation: base points + streak bonus + time bonus
+                const basePoints = this.currentWord.word.length * 10;
+                const streakBonus = this.streak * 5;
+                const timeBonus = Math.floor(this.timeLeft / 10) * 2;
+                const points = basePoints + streakBonus + timeBonus;
+                
+                this.score += points;
+                
+                this.showFeedback(`Correct! +${points} points`, 'correct');
+                
+                setTimeout(() => {
+                    this.nextWord();
+                }, 1000);
+
+                this.updateDisplay();
+            }
+
+            incorrectAnswer() {
+                this.streak = 0;
+                this.showFeedback('Try again!', 'incorrect');
+                this.wordInput.value = '';
+            }
+
+            skipWord() {
+                if (!this.gameActive) return;
+                
+                this.streak = 0;
+                this.showFeedback(`Skipped! Answer was: ${this.currentWord.word}`, 'incorrect');
+                
+                setTimeout(() => {
+                    this.nextWord();
+                }, 1500);
+            }
+
+            showFeedback(message, type) {
+                const feedback = document.getElementById('feedback');
+                feedback.textContent = message;
+                feedback.className = `feedback ${type}`;
+                feedback.classList.add('show');
+                
+                setTimeout(() => {
+                    feedback.classList.remove('show');
+                }, 2000);
+            }
+
+            updateDisplay() {
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('streak').textContent = this.streak;
+                document.getElementById('wordsCompleted').textContent = this.wordsCompleted;
+                document.getElementById('timeLeft').textContent = this.timeLeft;
+                
+                // Update progress bar
+                const progress = ((60 - this.timeLeft) / 60) * 100;
+                document.getElementById('progressFill').style.width = `${progress}%`;
+            }
+
+            toggleHint() {
+                this.hintsEnabled = !this.hintsEnabled;
+                this.displayWord();
+                
+                const button = event.target;
+                button.textContent = this.hintsEnabled ? 'Disable Hints' : 'Enable Hints';
+            }
+
+            endGame() {
+                this.gameActive = false;
+                clearInterval(this.timer);
+                
+                let message = `Time's up! Final score: ${this.score}`;
+                if (this.wordsCompleted > 0) {
+                    message += `\nWords completed: ${this.wordsCompleted}`;
+                    message += `\nBest streak: ${this.streak}`;
+                }
+                
+                setTimeout(() => {
+                    alert(message);
+                }, 500);
+            }
+        }
+
+        let game = new WordScrambleGame();
+
+        function startNewGame() {
+            game = new WordScrambleGame();
+        }
+
+        function skipWord() {
+            game.skipWord();
+        }
+
+        function toggleHint() {
+            game.toggleHint();
+        }
+    </script>
+</body>
+</html>
